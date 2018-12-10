@@ -1,0 +1,178 @@
+% PURPOSE
+% plot smoothed timeseries with median, 10 and 90 precentiles for models + observation data  
+% on the right side, boxplots are made for two scenarios
+% In KiN2100, Figure 5.2.1 (temp) and Figure 5.2.8 (precip) 
+clear
+%% define variable pr or tas
+cordex_var='pr';
+
+%% load observations
+if strcmp(cordex_var,'pr')
+    OBS=xlsread('/Home/siv5/sma087/Steffi/UNI_Klima/KSS/KiN2100/DATA/OBS/Norge_obs_precip_anom.xlsx','Sheet1');
+ else
+    OBS=xlsread('/Home/siv5/sma087/Steffi/UNI_Klima/KSS/KiN2100/DATA/OBS/Norge_obs_temp_anom.xlsx','Sheet1');
+end
+%% 10 years smoothing
+% obs_data=OBS(:,7);
+
+%% 30 years smoothing
+% obs_data=OBS(:,8); % 8 År; %%10 vinter; 12 vår; 14 sommer; 16 høst;%%
+% precip
+obs_data=OBS(:,2);
+cd /Home/siv5/sma087/Steffi/UNI_Klima/KSS/KiN2100/scripts/
+if strcmp(cordex_var,'pr')
+    h=9;n=115;obs_years=1900:2014;
+ else 
+    h=9;n=114;obs_years=1901:2014;
+end
+obs_data=ksr(obs_years,obs_data,h,n);
+obs_years=OBS(:,1);
+
+%% loading EUR-11 data
+% load hist data
+inputDir1 ='/Home/siv5/sma087/Steffi/UNI_Klima/KSS/KiN2100/DATA/EUR-11/NORWAY/';
+cd(inputDir1)
+if strcmp(cordex_var,'pr')
+    RCP45=load('PR_HISTORICAL_RCP45_1971_2100_ANN_KERNEL_SMOOTHED_h9.mat');
+    RCP85=load('PR_HISTORICAL_RCP85_1971_2100_ANN_KERNEL_SMOOTHED_h9.mat');
+else
+    RCP45=load('TAS_HISTORICAL_RCP45_1971_2100_ANN_KERNEL_SMOOTHED_h9.mat');
+    RCP85=load('TAS_HISTORICAL_RCP85_1971_2100_ANN_KERNEL_SMOOTHED_h9.mat');
+end
+cd /Home/siv5/sma087/Steffi/UNI_Klima/KSS/KiN2100/scripts/
+
+%% end of century 2071-2100
+xaxes_limits=[1900 2100];xaxes_stp=20;
+if strcmp(cordex_var,'pr')
+    yaxes_limits=[-15 30];yaxes_stp=5;
+else
+    yaxes_limits=[-2 7];yaxes_stp=1;
+end
+% colors
+rcp_cols=[0.6 0.6 1;1 0.4 0.4];
+
+% x and y axis ticks
+x_axis_ticks=xaxes_limits(1):xaxes_stp:xaxes_limits(2);
+y_axis_ticks=yaxes_limits(1):yaxes_stp:yaxes_limits(2);
+
+% add data to x-limits to make space for box plots
+xaxes_limits(2)=xaxes_limits(2)+20;
+end_cent_yr=xaxes_limits(2)-10;
+
+fnt=14;
+fntname='Arial';
+
+figure(1)
+clf
+set(gca,'XAxisLocation','bottom','YAxisLocation','left','FontName',fntname,'Fontsize',fnt,'FontWeight','normal');
+hold on
+
+% zero line
+hz=plot([xaxes_limits(1) xaxes_limits(end)] ,[0 0],'k--');
+set(hz,'Linewidth',1,'Color','k'); 
+mod_years=1971:2100;
+
+%%%%%%%%%%%%%%
+% rcp45
+%%%%%%%%%%%%%%
+% 10 and 90 precentile
+rcp45L=RCP45.ts_anom_norwayL;
+rcp45H=RCP45.ts_anom_norwayH;
+% median
+rcp45M=RCP45.ts_anom_norwayM;
+h1_2=patch([mod_years, fliplr(mod_years)],[rcp45L, fliplr(rcp45H)],'g');
+set(h1_2,'EdgeColor','k','FaceColor',rcp_cols(1,:),'EdgeColor',rcp_cols(1,:),'EdgeAlpha',0.4,'FaceAlpha',0.4);
+h1=plot(mod_years,rcp45M');
+set(h1,'Linewidth',3,'Color',rcp_cols(1,:))
+
+%% precip values in Table 5.2.3, KiN2100
+if strcmp(cordex_var,'pr')
+    RCP45MM=8;
+    RCP45LL=3;
+    RCP45HH=14;
+ else
+%% temperature values in Table 5.2.1, KiN2100
+    RCP45MM=2.7;
+    RCP45LL=1.6;
+    RCP45HH=3.7;
+end
+
+h1_3=patch([end_cent_yr-2 end_cent_yr+2 end_cent_yr+2 end_cent_yr-2 end_cent_yr-2],[RCP45LL RCP45LL RCP45HH RCP45HH RCP45LL],'g');
+set(h1_3,'EdgeColor','k','FaceColor',rcp_cols(1,:),'EdgeColor',rcp_cols(1,:),'EdgeAlpha',1,'FaceAlpha',1);
+h1_4=plot([end_cent_yr-2.5 end_cent_yr+2.5],[RCP45MM RCP45MM],'k');
+set(h1_4,'Color','k','Linewidth',3);
+
+%%%%%%%%%%%%%%
+% rcp85
+%%%%%%%%%%%%%%
+% 10 and 90 precentile
+rcp85L=RCP85.ts_anom_norwayL;
+rcp85H=RCP85.ts_anom_norwayH;
+% median
+rcp85M=RCP85.ts_anom_norwayM;
+h2_2=patch([mod_years, fliplr(mod_years)],[rcp85L, fliplr(rcp85H)],'g');
+set(h2_2,'EdgeColor','k','FaceColor',rcp_cols(2,:),'EdgeColor',rcp_cols(2,:),'EdgeAlpha',0.4,'FaceAlpha',0.4);
+h2=plot(mod_years,rcp85M);
+set(h2,'Linewidth',3,'Color',rcp_cols(2,:))
+
+%% precip values in Table 5.2.3, KiN2100
+if strcmp(cordex_var,'pr')
+    RCP85MM=18;
+    RCP85LL=7;
+    RCP85HH=23;
+ else
+%% temperature values in Table 5.2.1, KiN2100
+    RCP85MM=4.5;
+    RCP85LL=3.4;
+    RCP85HH=6.0;
+end
+
+end_cent_yr=end_cent_yr+5;
+h2_3=patch([end_cent_yr-2 end_cent_yr+2 end_cent_yr+2 end_cent_yr-2 end_cent_yr-2],[RCP85LL RCP85LL RCP85HH RCP85HH RCP85LL],'g');
+set(h2_3,'EdgeColor','k','FaceColor',rcp_cols(2,:),'EdgeColor',rcp_cols(2,:),'EdgeAlpha',1,'FaceAlpha',1);
+ 
+h2_4=plot([end_cent_yr-2.5 end_cent_yr+2.5],[RCP85MM RCP85MM],'k');
+set(h2_4,'Color','k','Linewidth',3);
+
+%%%%%%%%%%
+% OBS
+%%%%%%%%%%          
+h3=plot(obs_years,obs_data.f);
+set(h3,'Linewidth',3,'Color','k');
+
+axis([xaxes_limits(1) xaxes_limits(end) yaxes_limits(1) yaxes_limits(end)]);
+
+if strcmp(cordex_var,'pr')
+    yaxes_label='%';
+ else
+    yaxes_label='^oC';
+end
+
+xaxes_label=' '; 
+legend_text=['observations'; ...
+             'RCP4.5      '; ...
+             'RCP8.5      '];
+if strcmp(cordex_var,'pr')
+    output_name='OBS_FUTURE_PRECIP_NORWAY_TIMESERIES_H9';
+ else
+    output_name='OBS_FUTURE_TEMP_NORWAY_TIMESERIES_H9';
+end
+% y-label
+h=ylabel(yaxes_label);
+set(h,'Fontsize',fnt,'Fontname',fntname,'FontWeight','bold');
+
+% x-label
+h=xlabel(xaxes_label);
+set(h,'Fontsize',fnt,'Fontname',fntname,'FontWeight','bold');
+
+set(gca,'YTick',y_axis_ticks,'XTick',x_axis_ticks);
+set(gca,'YColor',[0 0 0],'XColor',[0 0 0],'Linewidth',2)
+
+h_leg=legend([h3,h1_3,h2_3],legend_text(1,:),legend_text(2,:),legend_text(3,:),'Location','NorthWest');
+set(h_leg,'Box','off','EdgeColor',[0.999 0.999 0.999],'Fontsize',fnt,'Fontname',fntname,'FontWeight','normal');
+
+eval(['print -dpng ' output_name '.png -r600'])
+eval(['print -djpeg ' output_name '.jpg -r600'])
+
+
+
